@@ -75,7 +75,7 @@ npm run dev:edge
 ```
 
 ```bash
-npm test        # 145 tests: 97 unit, 48 integration in real workerd
+npm test        # 190 tests: 142 unit, 48 integration in real workerd
 npm run typecheck
 ```
 
@@ -109,6 +109,15 @@ npm run test:burden
 32 assertions on the Phase 2 aggregates: that burden totals are correct, that a
 burst and a steady trickle are distinguishable, that the time window is
 honoured, and that burden analysis respects RLS rather than bypassing it.
+
+```bash
+npm run test:agreements
+```
+
+31 assertions on signing and immutability: that a link signs exactly once, that
+a completed signature cannot be reopened or rewritten, that a signed agreement
+cannot be edited out from under its signature, and that signing tokens are not
+readable by the dashboard client.
 
 ```bash
 npm run test:contract
@@ -285,11 +294,48 @@ burying it: in modal mode the page has already been sent, so it supports
 contract formation and nothing more. Modal mode is deliberately incapable of
 relaxing a TPM or bot challenge — that combination still withholds the page.
 
+## Phase 3
+
+The EU AI Act beacon shipped in Phase 2, so Phase 3 covered the other two.
+
+**NDA generation and signing.** Trade secret protection under 18 U.S.C. § 1836
+is conditional on having taken reasonable measures to keep the information
+secret; an NDA with everyone who sees it is the canonical one.
+
+The detail worth having: § 1833(b)(3) requires these agreements to carry a
+notice of whistleblower immunity, and omitting it forfeits exemplary damages
+and attorney's fees against that person under § 1836(b)(3) — the two remedies
+most worth having. Most templates omit it. This one includes it, defaults it on
+for US governing law rather than expecting the founder to know to ask, and
+`reviewNda()` flags it if it is turned off.
+
+Signing records assent — who, when, from where, and a hash of the exact text —
+in the same shape as the clickwrap record. A signed agreement is frozen at the
+database level: editing it raises, because a signature against a document that
+no longer exists is worse than no signature. It is not a qualified electronic
+signature service and the UI does not claim otherwise.
+
+**Notice drafting — split into the documents the facts actually support.** The
+plan called for "DMCA notices from proxy logs", which conflates two unrelated
+things. A § 512(c)(3)(A) takedown goes to a *host* about material republished on
+their system; access logs are not evidence of that. So:
+
+- **DMCA § 512 takedown** — built from the republication facts. `generateDmcaNotice`
+  *refuses to draft* unless every statutory element is present, including the
+  three statements the sender must make personally. Software cannot hold a
+  good-faith belief, so software does not assert one — the checkboxes start
+  unticked and there is no way to default them.
+- **Circumvention / access demand** — built from the evidence log, because that
+  is what the log evidences. Each draft reads its own evidence and says so when
+  it is weak: no forged token means the circumvention letter tells you it is
+  materially weaker than circumvention; no gated routes means the access letter
+  cites *hiQ* at you and rests on your terms instead.
+
+Nothing is ever sent. There is a "I sent this" button that records what the
+operator did; there is no send button, and there will not be one.
+
 ## Not yet built
 
-- Automated DMCA notice generation — see rule 2 in the legal mapping. Evidence
-  export is the product; sending a threat is a lawyer's call.
-- NDA generation and e-sign (DTSA layer)
 - Stripe billing and tiers
 - Reverse-DNS verification of search crawlers (currently trusts Cloudflare's
   `verifiedBotCategory`)

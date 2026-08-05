@@ -11,6 +11,7 @@ const TABS = [
   { href: '/terms', label: 'Terms' },
   { href: '/events', label: 'Activity' },
   { href: '/evidence', label: 'Evidence' },
+  { href: '/notices', label: 'Notices' },
 ];
 
 export default async function ProjectLayout({

@@ -177,6 +177,69 @@ rather than conclusions.
 
 ---
 
+## Layer 6 — Confidentiality agreements (`agreements`)
+
+**What it does.** Generates an NDA, issues signing links, and records assent
+against a specific document version.
+[`packages/shared/src/nda.ts`](../packages/shared/src/nda.ts).
+
+**Theory:** DTSA, 18 U.S.C. § 1836. Trade secret status requires the owner to
+have taken "reasonable measures" to keep the information secret.
+
+**Honest assessment.** Solid, and unusually actionable: unlike the statutes
+above, this one tells you exactly what to do. The measure is the NDA, and its
+absence is the usual reason a trade secret claim fails before anyone reaches the
+merits.
+
+One specific thing this gets right that most templates do not: § 1833(b)(3)
+requires an agreement governing trade secret use to contain a notice of the
+whistleblower immunity in § 1833(b). Omit it and you forfeit exemplary damages
+and attorney's fees against that person under § 1836(b)(3)(C)-(D). The generator
+includes it, defaults it on for US governing law, and `reviewNda()` warns when
+it is off — naming the specific remedies at stake rather than saying "consider
+adding a notice".
+
+**Limits, stated plainly.** The signature record is a timestamped record of
+assent with a hash of the exact text — the same construction as the clickwrap
+record, and no stronger. It is not a qualified or advanced electronic signature
+under eIDAS, and it is not a notarised execution. For an agreement where
+execution formality actually matters, use a real e-signature provider.
+
+---
+
+## The notice tooling
+
+Not a layer — a drafting aid sitting on top of the layers above. It exists in
+its current form because of rule 2 below, not despite it.
+
+**What it will not do.** It does not send. It does not tick a statutory
+statement for you, and there is no configuration that makes it. A § 512 notice
+carries two statements sworn under penalty of perjury, and § 512(f) creates
+liability for knowingly misrepresenting that material is infringing — including,
+per *Lenz v. Universal*, where fair use was not considered. Software cannot hold
+a good-faith belief. So the checkboxes start unticked, and
+`generateDmcaNotice()` returns a list of what is missing rather than a draft
+with gaps in it: an incomplete notice does not trigger the provider's obligation
+under § 512(c)(1)(C) anyway, so a partial draft is worse than none.
+
+**Why the split.** "Generate DMCA notices from proxy logs" is a category error.
+§ 512 targets material residing on a *service provider's* system; access logs
+evidence traffic to *your own*. They are different documents to different
+recipients resting on different facts, so they are separate generators.
+
+**Each demand reads its own evidence and reports weakness.** The circumvention
+letter checks for `tpm.bad_signature` or `tpm.binding_mismatch` — an actually
+forged or lifted token. Absent that, it softens its own wording and tells the
+sender the facts are materially weaker than circumvention. The access letter
+checks whether any `gate.*` rule fired; if the traffic only touched openly
+served pages, it cites *hiQ* back at the sender and rests on the terms of use
+instead. Both refuse to draft with no incidents at all.
+
+This is the honest version of the feature. A tool that produced a confident
+letter from thin facts would be actively harmful to the person sending it.
+
+---
+
 ## Evidence integrity
 
 Anyone can produce a CSV. What makes a log credible is that it was generated
@@ -209,9 +272,11 @@ periodic off-site export is the next step up, and is not implemented here.
    federal crime."** It may support a claim. Whether it is one is for a court.
    Overclaiming here is itself a false-advertising exposure, and it is the
    customer who would be relying on it.
-2. **Never generate a legal demand automatically.** Generating the *evidence
-   pack* is the product; deciding to send a threat is a lawyer's call. A
-   mis-sent DMCA notice carries § 512(f) exposure for the sender.
+2. **Never send a legal demand automatically, and never assert a state of mind
+   on the sender's behalf.** Drafting is a legitimate aid and Phase 3 builds it.
+   Sending is not, and the sworn statements in a § 512 notice are the sender's
+   alone — a pre-ticked good-faith checkbox is exactly what § 512(f) exposure
+   looks like. Draft, warn, and stop.
 3. **Keep observation separate from interpretation** in the schema, the exports
    and the UI. The moment they blur, the log stops being a record and starts
    being an argument.

@@ -6,3 +6,5 @@ export * from './token';
 export * from './bots';
 export * from './evidence';
 export * from './terms';
+export * from './nda';
+export * from './notices';

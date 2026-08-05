@@ -36,6 +36,10 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Signing links are for people who do not have an account here. The token is
+  // the only credential, and the page must not redirect them to a login form.
+  if (pathname.startsWith('/sign/')) return response;
+
   if (!user && pathname.startsWith('/dashboard')) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
