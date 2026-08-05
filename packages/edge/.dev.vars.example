@@ -1,0 +1,13 @@
+# Copy to `.dev.vars` (gitignored) for `wrangler dev`.
+#
+# With FS_CONFIG_FALLBACK set, the proxy runs entirely without Supabase — useful
+# for local development and demos. Point `originUrl` at whatever you are running
+# locally, then send requests with a Host header of `localhost`.
+
+FS_ADMIN_KEY=local-dev-admin-key
+
+FS_CONFIG_FALLBACK=[{"projectId":"local","domain":"localhost","originUrl":"http://127.0.0.1:3000","status":"active","mode":"standard","tpmSecret":"bG9jYWwtZGV2LXNlY3JldC1ub3QtZm9yLXByb2R1Y3Rpb24","tpm":{"enabled":true,"difficulty":12},"rateLimit":{"enabled":true,"requestsPerMinute":600},"bots":{"enabled":true},"logging":{"sampleRate":1,"logAllowed":true}}]
+
+# Uncomment to exercise the real config + evidence path against Supabase.
+# SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+# SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY

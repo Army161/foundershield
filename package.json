@@ -1,0 +1,31 @@
+{
+  "name": "foundershield",
+  "version": "0.1.0",
+  "private": true,
+  "description": "IP, anti-scraping and evidence-capture layer for indie founders.",
+  "workspaces": [
+    "packages/shared",
+    "packages/edge",
+    "packages/dashboard"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "test:schema": "supabase db reset && docker exec -i supabase_db_FOUNDERSHIELD psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f - < supabase/tests/schema_test.sql",
+    "test:contract": "tsx scripts/verify-supabase-contract.ts",
+    "dev:edge": "npm run dev --workspace @foundershield/edge",
+    "dev:dashboard": "npm run dev --workspace @foundershield/dashboard",
+    "deploy:edge": "npm run deploy --workspace @foundershield/edge"
+  },
+  "devDependencies": {
+    "supabase": "^2.2.1",
+    "tsx": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

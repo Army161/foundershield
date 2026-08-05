@@ -1,0 +1,36 @@
+name = "foundershield-edge"
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+workers_dev = true
+
+# Protection policy cache. Create with:
+#   npx wrangler kv namespace create FS_CONFIG
+#   npx wrangler kv namespace create FS_CONFIG --preview
+[[kv_namespaces]]
+binding = "FS_CONFIG"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_PREVIEW_KV_NAMESPACE_ID"
+
+# Sharded rate-limit counters. Removing this binding degrades rate limiting to
+# per-isolate approximate counting rather than failing.
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiterDurableObject"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RateLimiterDurableObject"]
+
+[vars]
+FS_CONFIG_TTL_SECONDS = "60"
+
+# Secrets — set with `npx wrangler secret put <NAME>`, never in this file:
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_ROLE_KEY
+#   FS_ADMIN_KEY
+#
+# Customer domains are attached either as routes here, or (preferred, and what
+# the dashboard automates) via Cloudflare for SaaS custom hostnames:
+# [[routes]]
+# pattern = "app.customer.com"
+# custom_domain = true
