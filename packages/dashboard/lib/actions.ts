@@ -2,7 +2,15 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { normaliseConfig, defaultSettings, generateTerms, type TermsInput } from '@foundershield/shared';
+import {
+  normaliseConfig,
+  defaultSettings,
+  generateTerms,
+  canAddDomain,
+  getPlan,
+  type TermsInput,
+} from '@foundershield/shared';
+import { currentPlanId } from './billing';
 import { createSupabaseServerClient, createSupabaseServiceClient, requireUser } from './supabase/server';
 import { checkProxyReachable, lookupTxt, purgeEdgeConfig } from './edge';
 import { PROJECT_COLUMNS, type Project } from './types';
@@ -61,6 +69,22 @@ export async function createProject(_prev: ActionResult, formData: FormData): Pr
 
   if (!name) return { ok: false, error: 'Give the project a name.' };
   if (!domain) return { ok: false, error: 'Enter a valid domain, for example app.example.com.' };
+
+  // The domain limit is enforced here, where refusing is safe. Traffic limits
+  // deliberately are not enforced anywhere — see packages/shared/src/plans.ts.
+  const [planId, { count }] = await Promise.all([
+    currentPlanId(),
+    supabase.from('projects').select('id', { count: 'exact', head: true }),
+  ]);
+
+  if (!canAddDomain(planId, count ?? 0)) {
+    const plan = getPlan(planId);
+    return {
+      ok: false,
+      error: `The ${plan.name} plan covers ${plan.domains} domain${plan.domains === 1 ? '' : 's'}, and you are using ${count ?? 0}. Upgrade to add another.`,
+    };
+  }
+
   if (!originUrl) {
     return { ok: false, error: 'Enter the full origin URL your traffic should be forwarded to, including https://.' };
   }

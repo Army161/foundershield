@@ -4,8 +4,9 @@ Anti-scraping protection and evidence capture for solo founders. A reverse proxy
 at the edge that verifies browsers, enforces authorisation boundaries, and keeps
 a tamper-evident record of what it stopped.
 
-**Phase 1 status: complete and tested.** 114 tests pass, all three packages
-typecheck, the dashboard builds. Not yet deployed — see [Deploying](#deploying).
+**All four phases complete and tested.** 376 checks pass across seven suites,
+all three packages typecheck, the dashboard builds. Not yet deployed — see
+[Deploying](#deploying) and [`docs/BETA.md`](docs/BETA.md).
 
 ```
 packages/shared      zero-dependency core: rolling-key tokens, policy, detection
@@ -75,7 +76,7 @@ npm run dev:edge
 ```
 
 ```bash
-npm test        # 190 tests: 142 unit, 48 integration in real workerd
+npm test        # 210 tests: 162 unit, 48 integration in real workerd
 npm run typecheck
 ```
 
@@ -118,6 +119,14 @@ npm run test:agreements
 a completed signature cannot be reopened or rewritten, that a signed agreement
 cannot be edited out from under its signature, and that signing tokens are not
 readable by the dashboard client.
+
+```bash
+npm run test:billing
+```
+
+23 assertions on billing authority: that a customer cannot grant themselves a
+plan or read Stripe identifiers, that a replayed webhook event is rejected, and
+that usage is reported as an estimate whenever traffic was sampled.
 
 ```bash
 npm run test:contract
@@ -334,9 +343,51 @@ their system; access logs are not evidence of that. So:
 Nothing is ever sent. There is a "I sent this" button that records what the
 operator did; there is no send button, and there will not be one.
 
+## Phase 4
+
+**Plan catalogue and Stripe billing.** Free / $20 / $50 / $150 / $300, with two
+decisions worth knowing:
+
+*Billing never gates traffic.* FounderShield sits in front of customers' users.
+Enforcing a request quota would mean degrading their site to collect our
+revenue — the same trade the proxy already refuses when it fails open. Domain
+count and feature access are enforced in the dashboard, where refusing is safe.
+Request volume is metered and reported, never enforced at the edge. Going over
+produces a conversation, not a throttle.
+
+*Nothing that keeps a live site standing up is behind a paywall.* Browser
+verification, bot scoring and rate limiting are on every plan including free. A
+free user being scraped is still protected. Paid plans add scale, retention and
+the legal tooling. A test asserts this structurally, and that plans never lose a
+feature as tiers ascend.
+
+Stripe is entirely optional — with no keys, the dashboard runs on the free plan
+and says so. The webhook verifies signatures against the raw body, records every
+event id before acting so retries cannot double-apply, and maps an unrecognised
+price to *free* rather than guessing upward. `past_due` keeps its plan: a failed
+card should not silently strip a customer's protection settings.
+
+**Landing page.** At `/`, statically rendered, with pricing generated from the
+same catalogue the dashboard enforces — so they cannot drift.
+
+The copy deliberately does **not** claim that bypassing FounderShield is a
+federal offence, and there is a comment in the source explaining why to whoever
+edits it next. The page has a section saying what the product will *not* tell
+you. That is not modesty: "we produce the record you would otherwise not have"
+is a claim that survives contact with a lawyer, and the alternative is a false
+advertising exposure the customer would be relying on.
+
+**Beta onboarding.** [`docs/BETA.md`](docs/BETA.md) — a runbook, since this part
+is not code. Includes the pre-flight checklist, what to watch in priority order
+(false positives first, by a distance), the known gaps to disclose up front, and
+the exit criteria.
+
 ## Not yet built
 
-- Stripe billing and tiers
+- Independent reverse-DNS verification of search crawlers (currently trusts
+  Cloudflare's `verifiedBotCategory`)
+- External timestamping of evidence seals
+- Automatic enforcement of evidence retention windows per plan
 - Reverse-DNS verification of search crawlers (currently trusts Cloudflare's
   `verifiedBotCategory`)
 - External timestamping of evidence seals

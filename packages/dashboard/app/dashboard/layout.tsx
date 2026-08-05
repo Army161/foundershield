@@ -17,6 +17,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Link href="/dashboard/agreements" className="text-sm text-ink-soft hover:text-ink">
               Agreements
             </Link>
+            <Link href="/dashboard/billing" className="text-sm text-ink-soft hover:text-ink">
+              Billing
+            </Link>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-ink-faint">{user.email}</span>

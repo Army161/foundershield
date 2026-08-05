@@ -47,6 +47,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // `/` is the marketing page and stays reachable when signed out. A signed-in
+  // visitor is sent to their dashboard instead.
   if (user && (pathname === '/login' || pathname === '/')) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';

@@ -8,3 +8,4 @@ export * from './evidence';
 export * from './terms';
 export * from './nda';
 export * from './notices';
+export * from './plans';
