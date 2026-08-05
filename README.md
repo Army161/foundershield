@@ -75,7 +75,7 @@ npm run dev:edge
 ```
 
 ```bash
-npm test        # 114 tests: 80 unit, 34 integration in real workerd
+npm test        # 145 tests: 97 unit, 48 integration in real workerd
 npm run typecheck
 ```
 
@@ -98,9 +98,17 @@ npm run db:start
 npm run test:schema
 ```
 
-59 assertions covering RLS isolation, the column grants, tamper detection and
+58 assertions covering RLS isolation, the column grants, tamper detection and
 the cascade behaviour. Every check is a behaviour test — "can user B read user
 A's evidence", not "did the DDL parse".
+
+```bash
+npm run test:burden
+```
+
+32 assertions on the Phase 2 aggregates: that burden totals are correct, that a
+burst and a steady trickle are distinguishable, that the time window is
+honoured, and that burden analysis respects RLS rather than bypassing it.
 
 ```bash
 npm run test:contract
@@ -207,7 +215,16 @@ cannot be shadowed or impersonated by an origin app.
 | `GET /__fs/v1/challenge` | Issues a signed challenge. |
 | `POST /__fs/v1/verify` | Accepts a solution, sets the token cookie. |
 | `POST /__fs/v1/clickwrap` | Records terms acceptance. |
+| `GET /__fs/v1/terms` | Generated terms of use. `.txt` for plain text. |
 | `POST /__fs/v1/admin/purge` | Drops a cached policy. Requires `X-FS-Admin-Key`. |
+
+Two documents are served from the customer's own namespace, and only when
+generated terms are configured:
+
+| Path | Purpose |
+|---|---|
+| `/.well-known/ai-permissions.json` | Machine-readable AI/TDM policy. Always served — the terms assert it exists. |
+| `/robots.txt` | Matching crawler policy. **Opt-in**, since that path usually already exists. |
 
 Your origin receives `X-Foundershield-Verified: 0|1`, `X-Foundershield-Project`,
 `X-Forwarded-For` and `X-Forwarded-Host`. Proxy cookies (`__fs_*`) are stripped
@@ -236,14 +253,43 @@ rather than leak it.
 
 ---
 
-## Not in Phase 1
+## Phase 2
 
-Deliberately out of scope, in rough priority order:
+Two of the three planned Phase 2 items shipped in Phase 1 — the trespass
+logging pipeline and clickwrap enforcement. Phase 2 filled the actual gaps:
+
+**Generated terms of use.** Clauses describing the access controls this site
+really enforces, served at `/__fs/v1/terms`. The version *is* a hash of the
+rendered text, so editing any clause necessarily bumps the version and re-asks
+everyone who accepted the old wording — you cannot quietly alter terms someone
+already agreed to, which is the usual way clickwrap gets thrown out. The
+matching machine-readable refusal is published alongside it, because the terms
+say it exists.
+
+It is a template and the UI says so plainly. Have a lawyer read it.
+
+**Per-actor burden analysis.** Phase 1 recorded per-request cost but never
+totalled it. `actor_burden()` aggregates requests, bytes, origin time consumed,
+active span and peak per-minute rate per address. These are the only numbers
+trespass to chattels can rest on — and if they turn out unremarkable, better to
+know that before relying on the claim.
+
+**Evidence report.** A presentable document rather than a CSV dump: how the
+records were produced, a re-verification of every seal performed at render time
+(printing the result even when a seal fails), per-actor load, which controls
+each actor triggered, and an explicit limitations section. Print to PDF.
+
+**Clickwrap presentation modes.** The interstitial withholds the page;
+the new modal overlays it. The dashboard states the trade-off rather than
+burying it: in modal mode the page has already been sent, so it supports
+contract formation and nothing more. Modal mode is deliberately incapable of
+relaxing a TPM or bot challenge — that combination still withholds the page.
+
+## Not yet built
 
 - Automated DMCA notice generation — see rule 2 in the legal mapping. Evidence
   export is the product; sending a threat is a lawyer's call.
 - NDA generation and e-sign (DTSA layer)
-- `robots.txt` / `ai-permissions.json` hosting (EU AI Act layer)
 - Stripe billing and tiers
 - Reverse-DNS verification of search crawlers (currently trusts Cloudflare's
   `verifiedBotCategory`)

@@ -100,9 +100,35 @@ routinely is not. This layer implements clickwrap specifically, and versions
 acceptance so amended terms require fresh assent — a common failure point when
 terms are updated silently.
 
+**What the code does about it.** The terms version is a *hash of the rendered
+text* ([`packages/shared/src/terms.ts`](../packages/shared/src/terms.ts)), not a
+number someone types. Editing any clause changes the version, which invalidates
+every prior acceptance and re-asks the visitor. It is therefore not possible to
+alter the terms someone agreed to while still holding a record saying they
+agreed to the current ones — which is precisely the attack on clickwrap that
+succeeds most often.
+
+**The presentation choice matters more than it looks.** `interstitial` withholds
+the page until the visitor clicks. `modal` serves the page and overlays a
+notice. Only the first controls access: under `modal` the content has already
+left the server, so a client that ignores the overlay and reads the DOM has it.
+Modal mode supports contract formation and nothing else, the dashboard says so
+in those words, and the proxy refuses to let modal mode relax a TPM or bot
+challenge — that combination still withholds the page.
+
 The limitation is that a contract binds the party who accepted it. It reaches an
 automated client that clicked through; it reaches an operator who never loaded
 the page far less well.
+
+**The AI-training clause** is an express reservation of rights and refusal of
+text and data mining, published in three places that must agree: the terms, the
+`/.well-known/ai-permissions.json` document, and (opt-in) `robots.txt`. All
+three derive from the same settings, so they cannot drift apart and leave a
+crawler operator able to say it read the permissive one. Note the honest limit:
+publishing a refusal is not the same as it being honoured, and the legal weight
+of a machine-readable reservation is still developing — the EU AI Act's Article
+53 obligations are the clearest hook and they bind AI providers, not the sites
+they crawl.
 
 ---
 
@@ -122,6 +148,17 @@ show impairment generally loses.
 This is why the schema records `origin_ms`, `response_bytes` and request
 volume: if impairment ever *is* provable, these are the numbers that prove it.
 If it is not, no amount of logging manufactures it.
+
+**What the code does about it.** `actor_burden()` aggregates per address:
+requests, bytes served, origin time consumed, active span, distinct paths, and
+peak requests-per-minute. Peak rate is the one that distinguishes a burst from a
+trickle, and it is the figure most likely to matter.
+
+Read the output honestly. A scraper pulling 40 requests in a minute and
+consuming a second of origin time has not impaired anything, and the report will
+show exactly that. The value of these numbers is as much in ruling the theory
+*out* cheaply as in supporting it — which is why the evidence report prints them
+plainly rather than editorialising.
 
 ---
 

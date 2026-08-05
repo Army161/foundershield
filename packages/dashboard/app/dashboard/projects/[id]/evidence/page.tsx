@@ -29,10 +29,24 @@ export default async function EvidencePage({ params }: { params: Promise<{ id: s
   return (
     <div className="space-y-6">
       <section className="card">
-        <h2 className="text-base font-semibold">Export</h2>
+        <h2 className="text-base font-semibold">Report</h2>
         <p className="hint">
-          A CSV of every recorded request, with the observed facts and the reason each decision was taken. Each row
-          carries the hash computed when it was written.
+          A presentable summary: how the records were produced, a re-verification of every seal performed at the moment
+          the report is generated, per-actor load totals, and an explicit statement of what the record does and does not
+          establish. Print it to PDF from your browser.
+        </p>
+        <div className="mt-4">
+          <a className="btn" href={`/dashboard/projects/${id}/evidence/report`}>
+            Open report
+          </a>
+        </div>
+      </section>
+
+      <section className="card">
+        <h2 className="text-base font-semibold">Raw export</h2>
+        <p className="hint">
+          Every recorded request, with the observed facts and the reason each decision was taken. Each row carries the
+          hash computed when it was written.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <a className="btn-secondary" href={`/api/projects/${id}/export?format=csv`}>

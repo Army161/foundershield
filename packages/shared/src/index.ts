@@ -5,3 +5,4 @@ export * from './routes';
 export * from './token';
 export * from './bots';
 export * from './evidence';
+export * from './terms';

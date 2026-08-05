@@ -16,6 +16,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "test:schema": "supabase db reset && docker exec -i supabase_db_FOUNDERSHIELD psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f - < supabase/tests/schema_test.sql",
+    "test:burden": "docker exec -i supabase_db_FOUNDERSHIELD psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f - < supabase/tests/burden_test.sql",
     "test:contract": "tsx scripts/verify-supabase-contract.ts",
     "dev:edge": "npm run dev --workspace @foundershield/edge",
     "dev:dashboard": "npm run dev --workspace @foundershield/dashboard",

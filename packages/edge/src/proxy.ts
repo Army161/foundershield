@@ -90,7 +90,7 @@ export async function fetchFromOrigin(
  */
 export function prepareResponse(
   origin: Response,
-  options: { injectChallenge: boolean; verified: boolean },
+  options: { injectChallenge: boolean; verified: boolean; clickwrapModalHtml?: string | null },
 ): Response {
   const headers = new Headers(origin.headers);
   for (const name of HOP_BY_HOP) headers.delete(name);
@@ -98,21 +98,38 @@ export function prepareResponse(
 
   const contentType = headers.get('content-type') ?? '';
   const isHtml = contentType.includes('text/html');
+  const modalHtml = options.clickwrapModalHtml ?? null;
 
-  if (!options.injectChallenge || !isHtml) {
+  if ((!options.injectChallenge && !modalHtml) || !isHtml) {
     return new Response(origin.body, { status: origin.status, statusText: origin.statusText, headers });
   }
 
-  const csp = headers.get('content-security-policy');
-  if (csp && /script-src/i.test(csp) && !/script-src[^;]*'self'/i.test(csp)) {
-    headers.set('content-security-policy', csp.replace(/script-src/i, "script-src 'self'"));
+  if (options.injectChallenge) {
+    const csp = headers.get('content-security-policy');
+    if (csp && /script-src/i.test(csp) && !/script-src[^;]*'self'/i.test(csp)) {
+      headers.set('content-security-policy', csp.replace(/script-src/i, "script-src 'self'"));
+    }
   }
 
-  const rewriter = new HTMLRewriter().on('head', {
-    element(element) {
-      element.append('<script src="/__fs/v1/c.js" defer></script>', { html: true });
-    },
-  });
+  let rewriter = new HTMLRewriter();
+
+  if (options.injectChallenge) {
+    rewriter = rewriter.on('head', {
+      element(element) {
+        element.append('<script src="/__fs/v1/c.js" defer></script>', { html: true });
+      },
+    });
+  }
+
+  if (modalHtml) {
+    // Appended to body rather than head so it sits above the page content in
+    // paint order without needing a stacking-context fight.
+    rewriter = rewriter.on('body', {
+      element(element) {
+        element.append(modalHtml, { html: true });
+      },
+    });
+  }
 
   const response = new Response(origin.body, {
     status: origin.status,

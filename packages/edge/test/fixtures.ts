@@ -76,6 +76,60 @@ export const PROJECTS = [
     tpm: { ...base.tpm, enabled: false },
     clickwrap: { enabled: true, version: '2', tosUrl: '/terms', requiredPaths: [] },
   },
+  // Generated terms, served by the proxy, presented as an overlay.
+  {
+    ...base,
+    projectId: 'p-generated',
+    domain: 'generated.example.com',
+    mode: 'standard',
+    tpm: { ...base.tpm, enabled: false },
+    clickwrap: {
+      enabled: true,
+      version: 'abc123def456',
+      tosUrl: '/terms',
+      requiredPaths: [],
+      presentation: 'modal',
+      serveRobotsTxt: true,
+      terms: {
+        siteName: 'Generated',
+        domain: 'generated.example.com',
+        operator: 'Generated Ltd',
+        contactEmail: 'legal@generated.example.com',
+        jurisdiction: 'England and Wales',
+        effectiveDate: '2026-08-05',
+        permitAiTraining: false,
+        permitSearchIndexing: true,
+        permittedAgents: ['Googlebot'],
+      },
+    },
+  },
+  // Same generated terms, but the interstitial presentation and a TPM layer
+  // that must not be relaxed by modal mode.
+  {
+    ...base,
+    projectId: 'p-modal-tpm',
+    domain: 'modaltpm.example.com',
+    mode: 'strict',
+    clickwrap: {
+      enabled: true,
+      version: 'abc123def456',
+      tosUrl: '/terms',
+      requiredPaths: [],
+      presentation: 'modal',
+      serveRobotsTxt: false,
+      terms: {
+        siteName: 'ModalTpm',
+        domain: 'modaltpm.example.com',
+        operator: 'ModalTpm Ltd',
+        contactEmail: 'legal@modaltpm.example.com',
+        jurisdiction: 'England and Wales',
+        effectiveDate: '2026-08-05',
+        permitAiTraining: false,
+        permitSearchIndexing: true,
+        permittedAgents: ['Googlebot'],
+      },
+    },
+  },
 ];
 
 export const ORIGIN_HTML = '<!doctype html><html><head><title>Origin</title></head><body>protected work</body></html>';

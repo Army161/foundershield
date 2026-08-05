@@ -8,6 +8,7 @@ const TABS = [
   { href: '', label: 'Overview' },
   { href: '/settings', label: 'Protection' },
   { href: '/routes', label: 'Protected routes' },
+  { href: '/terms', label: 'Terms' },
   { href: '/events', label: 'Activity' },
   { href: '/evidence', label: 'Evidence' },
 ];

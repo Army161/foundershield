@@ -13,10 +13,10 @@
 import { resolveDecision, matchesAny } from '@foundershield/shared';
 import { buildContext, type RequestContext } from './context.js';
 import { loadConfig } from './config-store.js';
-import { handleInternal, INTERNAL_PREFIX } from './endpoints.js';
+import { handleInternal, handlePolicyDocument, INTERNAL_PREFIX } from './endpoints.js';
 import { assess, tpmRequiredFor } from './layers.js';
 import { recordEvent } from './logging.js';
-import { blockedPage, clickwrapPage, interstitialPage, rateLimitedPage } from './pages.js';
+import { blockedPage, clickwrapModal, clickwrapPage, interstitialPage, rateLimitedPage } from './pages.js';
 import { fetchFromOrigin, prepareResponse } from './proxy.js';
 import type { Env } from './env.js';
 
@@ -47,6 +47,12 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
 
   if (!config) return unconfiguredResponse(context.host);
 
+  // Policy documents are served even while a project is pending or paused: the
+  // refusal they express is the customer's, and it should not blink out because
+  // enforcement is temporarily off.
+  const policyDocument = await handlePolicyDocument(context, config);
+  if (policyDocument) return policyDocument;
+
   // A project that is not live yet, or deliberately paused, is a plain proxy.
   if (config.status !== 'active') {
     const { response } = await fetchFromOrigin(context, config, false);
@@ -56,8 +62,21 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
   const assessment = await assess(context, config, env);
   const resolved = resolveDecision(assessment.reasons);
 
+  // In modal mode the terms notice is overlaid on the served page instead of
+  // replacing it. That relaxation applies *only* when clickwrap is the sole
+  // thing standing in the way — a TPM or bot challenge alongside it must still
+  // withhold the page, or modal mode would become a way to opt out of the
+  // protections that actually control access.
+  const stopping = assessment.reasons.filter((reason) => reason.action !== 'allow');
+  const clickwrapOnly = stopping.length > 0 && stopping.every((reason) => reason.layer === 'clickwrap');
+  const useClickwrapModal =
+    clickwrapOnly &&
+    resolved.action === 'challenge' &&
+    config.clickwrap.presentation === 'modal' &&
+    context.isDocumentRequest;
+
   // `monitor` records exactly what would have happened and enforces nothing.
-  const enforced = config.mode === 'monitor' ? 'allow' : resolved.action;
+  const enforced = config.mode === 'monitor' || useClickwrapModal ? 'allow' : resolved.action;
 
   if (enforced === 'block') {
     const rateLimited = resolved.primary?.layer === 'ratelimit';
@@ -105,7 +124,9 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
       const body = needsClickwrap
         ? clickwrapPage({
             returnTo,
-            tosUrl: config.clickwrap.tosUrl,
+            // Prefer the terms we generate and serve, so the version shown and
+            // the version recorded on acceptance cannot drift apart.
+            tosUrl: config.clickwrap.terms ? '/__fs/v1/terms' : config.clickwrap.tosUrl,
             version: config.clickwrap.version,
             siteName: config.domain,
           })
@@ -169,7 +190,18 @@ async function handle(request: Request, env: Env, ctx: ExecutionContext): Promis
     !verified &&
     !matchesAny(context.path, config.tpm.exemptPaths);
 
-  const prepared = prepareResponse(response, { injectChallenge, verified });
+  const prepared = prepareResponse(response, {
+    injectChallenge,
+    verified,
+    clickwrapModalHtml: useClickwrapModal
+      ? clickwrapModal({
+          returnTo: context.url.pathname + context.url.search,
+          tosUrl: config.clickwrap.terms ? '/__fs/v1/terms' : config.clickwrap.tosUrl,
+          version: config.clickwrap.version,
+          siteName: config.domain,
+        })
+      : null,
+  });
 
   // In monitor mode the recorded action is what the policy *decided*; `enforced`
   // is what actually happened. Keeping both is what makes a monitor-mode dry run

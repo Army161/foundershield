@@ -113,6 +113,41 @@ export function rateLimitedPage(retryAfterSeconds: number, requestId: string | n
   );
 }
 
+/**
+ * The modal variant, appended to the origin's own HTML.
+ *
+ * Deliberately a plain form with inline styles and no JavaScript: it has to
+ * work when the challenge script is blocked, and a submit button that posts to
+ * our endpoint is the most reliable way to record an affirmative click.
+ *
+ * Understand what this does and does not do. The page behind it has already
+ * been served, so a client that ignores the overlay and reads the DOM gets the
+ * content. This supports contract formation; it is not access control. Use
+ * `interstitial` where the content itself must be withheld.
+ */
+export function clickwrapModal(options: {
+  returnTo: string;
+  tosUrl: string;
+  version: string;
+  siteName: string;
+}): string {
+  const safeReturn = escapeHtml(options.returnTo);
+  const safeTos = escapeHtml(options.tosUrl);
+
+  return `<div role="dialog" aria-modal="true" aria-labelledby="fs-cw-title" style="position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:24px;background:rgba(12,12,16,.55);backdrop-filter:blur(3px);font:16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div style="max-width:30rem;width:100%;background:#fff;color:#16161d;border-radius:14px;padding:28px;box-shadow:0 12px 40px rgba(0,0,0,.25);">
+    <h2 id="fs-cw-title" style="font-size:1.2rem;margin:0 0 .6rem;letter-spacing:-.01em;">Before you continue</h2>
+    <p style="margin:0 0 .9rem;color:#4a4a55;">Access to ${escapeHtml(options.siteName)} is subject to its <a href="${safeTos}" target="_blank" rel="noopener" style="color:inherit;">terms of use</a> (version ${escapeHtml(options.version)}), which restrict automated collection and re-use of the content.</p>
+    <form method="POST" action="/__fs/v1/clickwrap" style="margin:0;">
+      <input type="hidden" name="returnTo" value="${safeReturn}">
+      <input type="hidden" name="version" value="${escapeHtml(options.version)}">
+      <button type="submit" style="font:inherit;font-weight:550;padding:10px 18px;border-radius:9px;border:1px solid #16161d;background:#16161d;color:#fff;cursor:pointer;">I agree</button>
+    </form>
+    <p style="margin:1.25rem 0 0;font-size:13px;color:#8a8a99;">Your acceptance is recorded with a timestamp. Protected by FounderShield</p>
+  </div>
+</div>`;
+}
+
 export function clickwrapPage(options: {
   returnTo: string;
   tosUrl: string;

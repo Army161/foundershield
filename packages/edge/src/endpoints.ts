@@ -8,10 +8,15 @@
 import {
   CLICKWRAP_COOKIE,
   TOKEN_COOKIE,
+  aiPermissionsDocument,
   constantTimeEqual,
+  generateTerms,
   issueChallenge,
   issueClickwrap,
   issueToken,
+  renderTermsHtml,
+  renderTermsText,
+  robotsTxt,
   utf8,
   verifyChallengeSolution,
   type EdgeProjectConfig,
@@ -23,6 +28,52 @@ import { recordEvent } from './logging.js';
 import type { Env } from './env.js';
 
 export const INTERNAL_PREFIX = '/__fs/v1';
+
+export const AI_PERMISSIONS_PATH = '/.well-known/ai-permissions.json';
+export const ROBOTS_PATH = '/robots.txt';
+
+/**
+ * Policy documents that live in the *customer's* namespace rather than ours.
+ *
+ * These exist because the generated terms assert that the same refusal is
+ * published in machine-readable form. If we did not serve them, the terms would
+ * state something untrue, which is a worse problem than the missing file.
+ *
+ * `/.well-known/ai-permissions.json` is served whenever generated terms are in
+ * use — it is our own well-known name and is very unlikely to collide.
+ * `/robots.txt` is opt-in, because that path usually already exists and
+ * replacing it unasked would break a customer's search presence.
+ */
+export async function handlePolicyDocument(
+  context: RequestContext,
+  config: EdgeProjectConfig,
+): Promise<Response | null> {
+  const terms = config.clickwrap.terms;
+  if (!terms) return null;
+
+  if (context.path === AI_PERMISSIONS_PATH) {
+    const { version } = await generateTerms(terms);
+    return new Response(JSON.stringify(aiPermissionsDocument(terms, version), null, 2), {
+      headers: {
+        'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'public, max-age=3600',
+        'x-foundershield': 'ai-permissions',
+      },
+    });
+  }
+
+  if (context.path === ROBOTS_PATH && config.clickwrap.serveRobotsTxt) {
+    return new Response(robotsTxt(terms), {
+      headers: {
+        'content-type': 'text/plain; charset=utf-8',
+        'cache-control': 'public, max-age=3600',
+        'x-foundershield': 'robots',
+      },
+    });
+  }
+
+  return null;
+}
 
 const NO_STORE = { 'cache-control': 'no-store', 'x-foundershield': 'active' } as const;
 
@@ -87,6 +138,27 @@ export async function handleInternal(
   }
 
   if (!config) return json({ error: 'domain_not_configured' }, { status: 503 });
+
+  // The terms we generate and serve ourselves. Rendered on demand from the
+  // stored inputs so the served text and the recorded acceptance version can
+  // never drift apart.
+  if (route === '/terms' || route === '/terms.txt') {
+    if (!config.clickwrap.terms) {
+      return json({ error: 'no_generated_terms' }, { status: 404 });
+    }
+
+    const terms = await generateTerms(config.clickwrap.terms);
+    const asText = route === '/terms.txt';
+
+    return new Response(asText ? renderTermsText(terms) : renderTermsHtml(terms), {
+      headers: {
+        'content-type': asText ? 'text/plain; charset=utf-8' : 'text/html; charset=utf-8',
+        'cache-control': 'public, max-age=300',
+        'x-foundershield': 'terms',
+        'x-fs-terms-version': terms.version,
+      },
+    });
+  }
 
   if (route === '/challenge') {
     const challenge = await issueChallenge({

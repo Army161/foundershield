@@ -70,6 +70,70 @@ export interface RequestEvent {
   row_hash: string | null;
 }
 
+export interface ActorBurden {
+  ip: string;
+  ip_hash: string;
+  country: string | null;
+  as_organisation: string | null;
+  requests: number;
+  blocked: number;
+  challenged: number;
+  allowed: number;
+  bytes_served: number;
+  origin_ms_total: number;
+  first_seen: string;
+  last_seen: string;
+  active_seconds: number;
+  mean_requests_per_minute: number;
+  peak_requests_per_minute: number;
+  distinct_paths: number;
+  user_agents: string[] | null;
+  rule_ids: string[] | null;
+}
+
+export interface EvidenceReportHeader {
+  project: {
+    id: string;
+    name: string;
+    domain: string;
+    originUrl: string;
+    status: string;
+    createdAt: string;
+    dnsVerifiedAt: string | null;
+    proxyVerifiedAt: string | null;
+  };
+  settingsNow: Record<string, unknown>;
+  window: { since: string; until: string };
+  totals: {
+    events: number;
+    blocked: number;
+    challenged: number;
+    enforced: number;
+    actors: number;
+    bytesServed: number;
+    originMs: number;
+  };
+  seals: Array<{
+    id: string;
+    fromEvent: number;
+    toEvent: number;
+    eventCount: number;
+    digest: string;
+    sealedAt: string;
+  }>;
+}
+
+export interface SealVerification {
+  sealId: string;
+  intact: boolean;
+  expectedDigest: string;
+  actualDigest: string | null;
+  expectedCount: number;
+  actualCount: number;
+  alteredRows: number;
+  sealedAt: string;
+}
+
 export interface ProjectStats {
   total: number;
   blocked: number;

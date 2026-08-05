@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { normaliseConfig, defaultSettings } from '@foundershield/shared';
+import { normaliseConfig, defaultSettings, generateTerms, type TermsInput } from '@foundershield/shared';
 import { createSupabaseServerClient, createSupabaseServiceClient, requireUser } from './supabase/server';
 import { checkProxyReachable, lookupTxt, purgeEdgeConfig } from './edge';
 import { PROJECT_COLUMNS, type Project } from './types';
@@ -241,6 +241,100 @@ export async function updateProtectedRoutes(_prev: ActionResult, formData: FormD
   await purgeEdgeConfig(project.domain);
   revalidatePath(`/dashboard/projects/${projectId}/routes`);
   return { ok: true, message: `${routes.length} protected route${routes.length === 1 ? '' : 's'} saved.` };
+}
+
+// ---------------------------------------------------------------------------
+// Generated terms
+// ---------------------------------------------------------------------------
+
+export async function updateTerms(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  const projectId = String(formData.get('project_id') ?? '');
+  const project = await assertOwnership(projectId);
+
+  const enabled = boolField(formData, 'cw_enabled');
+  const useGenerated = boolField(formData, 'use_generated');
+  const presentation = String(formData.get('presentation') ?? 'interstitial');
+
+  const supabase = await createSupabaseServerClient();
+  const { data: existing } = await supabase
+    .from('protection_settings')
+    .select('clickwrap')
+    .eq('project_id', projectId)
+    .single();
+
+  const current = (existing?.clickwrap ?? {}) as Record<string, unknown>;
+
+  if (!useGenerated) {
+    const { error } = await supabase
+      .from('protection_settings')
+      .update({
+        clickwrap: {
+          ...current,
+          enabled,
+          terms: null,
+          presentation: presentation === 'modal' ? 'modal' : 'interstitial',
+          serveRobotsTxt: false,
+          tosUrl: String(formData.get('tos_url') ?? '/terms').trim() || '/terms',
+        },
+      })
+      .eq('project_id', projectId);
+    if (error) return { ok: false, error: error.message };
+
+    await purgeEdgeConfig(project.domain);
+    revalidatePath(`/dashboard/projects/${projectId}/terms`);
+    return { ok: true, message: 'Saved. FounderShield will link to your own terms.' };
+  }
+
+  const terms: TermsInput = {
+    siteName: String(formData.get('site_name') ?? '').trim(),
+    domain: project.domain,
+    operator: String(formData.get('operator') ?? '').trim(),
+    contactEmail: String(formData.get('contact_email') ?? '').trim(),
+    jurisdiction: String(formData.get('jurisdiction') ?? '').trim() || 'England and Wales',
+    effectiveDate: String(formData.get('effective_date') ?? '').trim() || new Date().toISOString().slice(0, 10),
+    permitAiTraining: boolField(formData, 'permit_ai'),
+    permitSearchIndexing: boolField(formData, 'permit_indexing'),
+    permittedAgents: lines(formData, 'permitted_agents'),
+  };
+
+  if (!terms.siteName) return { ok: false, error: 'Enter the name people know your site by.' };
+  if (!terms.operator) {
+    return { ok: false, error: 'Enter the legal entity that operates the site — the terms need a counterparty.' };
+  }
+  if (!terms.contactEmail) return { ok: false, error: 'Enter a contact address for questions about the terms.' };
+
+  // The version *is* the content hash, so a clause change necessarily
+  // re-asks everyone. That is the point, but the UI warns before it happens.
+  const generated = await generateTerms(terms);
+
+  const { error } = await supabase
+    .from('protection_settings')
+    .update({
+      clickwrap: {
+        ...current,
+        enabled,
+        version: generated.version,
+        tosUrl: '/__fs/v1/terms',
+        terms,
+        presentation: presentation === 'modal' ? 'modal' : 'interstitial',
+        serveRobotsTxt: boolField(formData, 'serve_robots'),
+      },
+    })
+    .eq('project_id', projectId);
+
+  if (error) return { ok: false, error: error.message };
+
+  await purgeEdgeConfig(project.domain);
+  revalidatePath(`/dashboard/projects/${projectId}/terms`);
+
+  const previousVersion = typeof current.version === 'string' ? current.version : null;
+  return {
+    ok: true,
+    message:
+      previousVersion && previousVersion !== generated.version
+        ? `Terms saved as version ${generated.version}. Because the wording changed, everyone who accepted version ${previousVersion} will be asked again.`
+        : `Terms saved as version ${generated.version}.`,
+  };
 }
 
 // ---------------------------------------------------------------------------

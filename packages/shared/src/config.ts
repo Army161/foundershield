@@ -7,6 +7,8 @@
  * build can never crash the proxy — missing fields fall back to defaults.
  */
 
+import type { TermsInput } from './terms';
+
 export type ProjectStatus = 'pending' | 'active' | 'paused';
 
 /**
@@ -87,11 +89,35 @@ export interface AuthGateSettings {
 
 export interface ClickwrapSettings {
   enabled: boolean;
-  /** Bumping this invalidates every previously recorded acceptance. */
+  /**
+   * Bumping this invalidates every previously recorded acceptance. When
+   * `terms` is present this is the generated content hash, so editing a clause
+   * necessarily re-asks everyone.
+   */
   version: string;
+  /** Where the terms live. Ignored when `terms` is set. */
   tosUrl: string;
   /** Paths gated behind acceptance. Empty means the whole site. */
   requiredPaths: string[];
+  /**
+   * Inputs for terms FounderShield generates and serves itself. Stored rather
+   * than the rendered document so the edge can re-render deterministically and
+   * the config stays small.
+   */
+  terms: TermsInput | null;
+  /**
+   * `interstitial` withholds the page until the visitor accepts.
+   * `modal` serves the page and overlays the notice — better looking, but the
+   * content has already left the server, so it only supports contract
+   * formation, not access control. The dashboard states that trade-off.
+   */
+  presentation: 'interstitial' | 'modal';
+  /**
+   * Serve a generated `/robots.txt` in place of the origin's. Opt-in, because
+   * unlike `/.well-known/ai-permissions.json` this path very often already
+   * exists and silently replacing it would be an unpleasant surprise.
+   */
+  serveRobotsTxt: boolean;
 }
 
 export interface LoggingSettings {
@@ -159,6 +185,9 @@ export const DEFAULT_CLICKWRAP: ClickwrapSettings = {
   version: '1',
   tosUrl: '/terms',
   requiredPaths: [],
+  terms: null,
+  presentation: 'interstitial',
+  serveRobotsTxt: false,
 };
 
 export const DEFAULT_LOGGING: LoggingSettings = {
@@ -187,6 +216,31 @@ function str(value: unknown, fallback: string): string {
 
 function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
   return allowed.includes(value as T) ? (value as T) : fallback;
+}
+
+/**
+ * Terms inputs must be fully populated or absent — a half-written record would
+ * render a document with blanks in it, which is worse than no document at all.
+ */
+function normaliseTerms(value: unknown, domain: string): TermsInput | null {
+  if (!value || typeof value !== 'object') return null;
+  const t = value as Record<string, unknown>;
+
+  const siteName = str(t.siteName, '');
+  const operator = str(t.operator, '');
+  if (!siteName || !operator) return null;
+
+  return {
+    siteName,
+    domain: str(t.domain, domain),
+    operator,
+    contactEmail: str(t.contactEmail, ''),
+    jurisdiction: str(t.jurisdiction, 'England and Wales'),
+    effectiveDate: str(t.effectiveDate, new Date(0).toISOString().slice(0, 10)),
+    permitAiTraining: bool(t.permitAiTraining, false),
+    permitSearchIndexing: bool(t.permitSearchIndexing, true),
+    permittedAgents: stringArray(t.permittedAgents, ['Googlebot', 'Bingbot']),
+  };
 }
 
 function normaliseRoutes(value: unknown): ProtectedRoute[] {
@@ -280,6 +334,9 @@ export function normaliseConfig(raw: unknown): EdgeProjectConfig | null {
       version: str(cw.version, DEFAULT_CLICKWRAP.version),
       tosUrl: str(cw.tosUrl, DEFAULT_CLICKWRAP.tosUrl),
       requiredPaths: stringArray(cw.requiredPaths, []),
+      terms: normaliseTerms(cw.terms, domain),
+      presentation: oneOf(cw.presentation, ['interstitial', 'modal'] as const, 'interstitial'),
+      serveRobotsTxt: bool(cw.serveRobotsTxt, DEFAULT_CLICKWRAP.serveRobotsTxt),
     },
     logging: {
       sampleRate: clamp(log.sampleRate, 0, 1, DEFAULT_LOGGING.sampleRate),
