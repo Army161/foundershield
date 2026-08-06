@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Lets CI be re-run from the Actions tab without inventing a commit.
+  workflow_dispatch:
 
 jobs:
   verify:
@@ -44,9 +46,17 @@ jobs:
 
       - run: npm ci
 
+      # Skipped rather than failed while Cloudflare credentials are absent. A
+      # permanently red CI badge teaches everyone to ignore CI, which costs
+      # more than the missing deploy does.
       - name: Deploy worker
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: packages/edge
+
+      - name: Note missing credentials
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN == '' }}
+        run: echo "CLOUDFLARE_API_TOKEN is not set — skipping deploy. Add it in Settings > Secrets to enable."
