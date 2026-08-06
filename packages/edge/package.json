@@ -14,10 +14,10 @@
     "@foundershield/shared": "*"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.5.41",
+    "@cloudflare/vitest-pool-workers": "^0.20.2",
     "@cloudflare/workers-types": "^4.20241230.0",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8",
-    "wrangler": "^3.99.0"
+    "vitest": "^4.1.10",
+    "wrangler": "^4.119.0"
   }
 }

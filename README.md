@@ -63,6 +63,9 @@ are materially different facts.
 
 ## Running locally
 
+Needs **Node 22.12 or newer** — wrangler 4 requires ≥22 and vite 8 requires
+≥22.12, so the dev toolchain no longer runs on Node 20.
+
 ```bash
 npm install
 ```
@@ -76,7 +79,7 @@ npm run dev:edge
 ```
 
 ```bash
-npm test        # 210 tests: 162 unit, 48 integration in real workerd
+npm test        # 210 tests: 162 unit, 48 integration in real workerd (Vitest 4)
 npm run typecheck
 ```
 

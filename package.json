@@ -37,15 +37,21 @@
     "Next 16.3.0 itself moved to, clearing the advisories without the breaking change.",
     "sharp is overridden tree-wide rather than only under `next`, because wrangler",
     "pulls its own older copy (0.33.5) as well.",
+    "undici <=7.28.0 carries request-smuggling, CRLF-injection and cookie-handling",
+    "advisories and is pinned to exactly 7.28.0 by miniflare, which the edge test",
+    "harness depends on. 7.29.0 is the patch release; this is dev-only, but it is a",
+    "single patch bump and there is no reason to sit on it.",
     "NOTE: npm will not re-evaluate overrides against an existing node_modules tree.",
     "If these ever appear not to apply, `rm -rf node_modules package-lock.json` first.",
-    "Remove this block when the project moves to Next 16."
+    "Remove the sharp/postcss entries when the project moves to Next 16."
   ],
   "overrides": {
     "sharp": "^0.35.3",
-    "postcss": "^8.5.25"
+    "postcss": "^8.5.25",
+    "undici": "^7.29.0"
   },
+  "//engines": "wrangler 4 requires >=22.0.0 and vite 8 requires >=22.12.0, so the dev toolchain no longer runs on Node 20. CI pins 22.",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12.0"
   }
 }
