@@ -28,6 +28,23 @@
     "supabase": "^2.2.1",
     "tsx": "^4.19.2"
   },
+  "//overrides": [
+    "Next 15.5.22 is the latest 15.x and still pins postcss 8.4.31 and sharp ^0.34.3.",
+    "Both carry published advisories on the production dependency path:",
+    "  sharp   <0.35.0   inherited libvips CVEs        GHSA-f88m-g3jw-g9cj",
+    "  postcss <=8.5.22  path traversal + XSS, x4      GHSA-r28c-9q8g-f849 et al",
+    "npm's suggested fix is next@16 -- a major upgrade. These pin the exact versions",
+    "Next 16.3.0 itself moved to, clearing the advisories without the breaking change.",
+    "sharp is overridden tree-wide rather than only under `next`, because wrangler",
+    "pulls its own older copy (0.33.5) as well.",
+    "NOTE: npm will not re-evaluate overrides against an existing node_modules tree.",
+    "If these ever appear not to apply, `rm -rf node_modules package-lock.json` first.",
+    "Remove this block when the project moves to Next 16."
+  ],
+  "overrides": {
+    "sharp": "^0.35.3",
+    "postcss": "^8.5.25"
+  },
   "engines": {
     "node": ">=20"
   }
