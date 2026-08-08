@@ -391,6 +391,3 @@ the exit criteria.
   Cloudflare's `verifiedBotCategory`)
 - External timestamping of evidence seals
 - Automatic enforcement of evidence retention windows per plan
-- Reverse-DNS verification of search crawlers (currently trusts Cloudflare's
-  `verifiedBotCategory`)
-- External timestamping of evidence seals
