@@ -69,7 +69,7 @@ full local verification suite.
 | DNS / registrar | Domain verification + traffic routing | NOT STARTED |
 
 A pre-existing hosted Supabase project is referenced in the gitignored
-`packages/dashboard/.env.local`: project ref `dzdphmzubseabnkjpdda` (us-east-2).
+`packages/dashboard/.env.local` (project ref redacted here; see that file).
 Its service-role key is deliberately blank, with an in-file note that it must be
 supplied by the operator. Whether that project is the intended production target
 is unconfirmed.
@@ -152,7 +152,7 @@ interactive browser OAuth flow, which a non-interactive session cannot run.
 Two decisions I cannot make for you:
 
 - **Which Supabase project is production.** `packages/dashboard/.env.local`
-  references ref `dzdphmzubseabnkjpdda` (us-east-2) with a deliberately blank
+  references an existing project ref (redacted here) with a deliberately blank
   service-role key. Confirm whether that is the intended production target or
   whether a new project should be created.
 - **Which real domain** to onboard as the first protected beta domain, and
