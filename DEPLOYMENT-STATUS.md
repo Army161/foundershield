@@ -138,6 +138,34 @@ CI (`.github/workflows/ci.yml`) expects two repository secrets:
 
 ---
 
+## Static security review (Steps 6, 9, 10, 11 — code-level portions)
+
+Performed by reading the source. These are the parts of the production safety
+review that do not require deployed infrastructure. Items needing live infra are
+listed as BLOCKED in the verdict.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Token cookie flags | **PASS** | `endpoints.ts:81` — `Path=/; Max-Age=…; HttpOnly; Secure (when https); SameSite=Lax` |
+| Admin endpoint auth | **PASS** | `endpoints.ts:128` — constant-time compare, and **fails closed when `FS_ADMIN_KEY` is unset** (`!expected \|\|`), so a missing secret cannot open the endpoint |
+| Server secret exposure | **PASS** | No server secret carries a `NEXT_PUBLIC_` prefix. `SUPABASE_SERVICE_ROLE_KEY` is server-only |
+| Service-role client isolation | **PASS** | `lib/supabase/server.ts` imports `next/headers` at module top level, so Next refuses to bundle it into a client component |
+| Dashboard route protection | **PASS** | `middleware.ts` gates `/dashboard`; uses `getUser()` **not** `getSession()`, so a revoked session cannot linger behind a valid-looking cookie |
+| Signing-link exemption | **PASS** | `/sign/*` deliberately bypasses the login redirect — the token is the only credential, and signers have no account |
+| Fail-open behaviour | **PASS (static)** | `index.ts:224` — top-level catch falls through to a plain pass-through proxy tagged `x-foundershield: degraded`; 502 only when the origin itself is unreachable |
+| Customer cannot self-verify a domain | **PASS** | `actions.ts:373` — `assertOwnership` first; the `status → active` flip is a **service-role** write gated on a real proxy fetch, and a domain reaching a *different* project's proxy is rejected |
+| Legal overclaiming | **PASS** | Every match for prohibited phrasing is a disclaimer. `app/page.tsx:155` explicitly refuses the "federal crime" claim; NDA/terms generators label themselves templates, not legal advice |
+
+### Hardening observation (not a defect)
+
+`lib/supabase/server.ts` is protected from client bundling only implicitly, via
+its `next/headers` import. An explicit `import 'server-only'` at the top would
+make that guarantee independent of import order and tree-shaking. No leak exists
+today — the production build was inspected and no server secret reaches the
+client bundle.
+
+---
+
 ## Credential blockers — action required
 
 All three deployment CLIs are confirmed unauthenticated. Each needs an
@@ -179,9 +207,10 @@ Branch: `main`
 | Monitor mode | **BLOCKED** | requires live traffic |
 | Evidence capture | **PASS (local)** / BLOCKED (production) | contract suite drives real PostgREST writes |
 | Evidence reporting | **BLOCKED** | requires real evidence |
-| Fail-open behavior | **BLOCKED** | not exercised; needs deployed Worker |
+| Fail-open behavior | **PASS (static)** / BLOCKED (live) | top-level catch verified by reading; not exercised against a real origin |
 | Tests | **PASS** | 376 checks, 7 suites, plus build + bundle |
-| Security review | **PARTIAL PASS** | Step 2 secret scan passes; full Step 10 review needs deployed infra |
+| Security review | **PASS (static)** / BLOCKED (live) | Step 2 secret scan plus 9 code-level checks pass; CORS/CSP-in-the-wild, TLS and live rate limiting need deployed infra |
+| Legal claims (Step 11) | **PASS** | no prohibited claims; disclaimers present in copy and generators |
 | Real-domain beta | **BLOCKED** | no domain connected |
 
 ### FINAL VERDICT: DEPLOYMENT BLOCKED
