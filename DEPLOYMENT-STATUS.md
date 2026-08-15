@@ -156,13 +156,29 @@ listed as BLOCKED in the verdict.
 | Customer cannot self-verify a domain | **PASS** | `actions.ts:373` — `assertOwnership` first; the `status → active` flip is a **service-role** write gated on a real proxy fetch, and a domain reaching a *different* project's proxy is rejected |
 | Legal overclaiming | **PASS** | Every match for prohibited phrasing is a disclaimer. `app/page.tsx:155` explicitly refuses the "federal crime" claim; NDA/terms generators label themselves templates, not legal advice |
 
-### Hardening observation (not a defect)
+### Hardening applied
 
-`lib/supabase/server.ts` is protected from client bundling only implicitly, via
-its `next/headers` import. An explicit `import 'server-only'` at the top would
-make that guarantee independent of import order and tree-shaking. No leak exists
-today — the production build was inspected and no server secret reaches the
-client bundle.
+`lib/supabase/server.ts` now opens with `import 'server-only'`, so importing it
+from a Client Component is a hard build error rather than relying on the
+`next/headers` import as an incidental guard. `server-only@0.0.1` was added to
+the dashboard's dependencies.
+
+### Advisory resolved: nanoid GHSA-2v37-7h3g-55p8 (high)
+
+Surfaced mid-session — `nanoid@3.3.17` was already present at the baseline
+commit unchanged, and the advisory was published between two audit runs, so it
+was newly disclosed rather than newly introduced.
+
+It arrives under `postcss`, which the repo already overrides, so it got the same
+treatment: `"nanoid": "^3.3.18"` added to the root `overrides` block with a note
+in the existing `//overrides` prose.
+
+As the repo's own note warns, npm did not re-evaluate the override against the
+existing tree — a `rm -rf node_modules package-lock.json` and clean reinstall was
+required. That regenerated the lockfile, which is why its diff is large relative
+to the change. Post-rebuild: `nanoid@3.3.18`, **`npm audit` reports 0
+vulnerabilities on both the production path and the full tree**, and the entire
+suite was re-run from scratch and passes.
 
 ---
 

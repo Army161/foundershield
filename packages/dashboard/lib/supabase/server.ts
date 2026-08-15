@@ -1,3 +1,9 @@
+// Hard build-time guard: importing this module from a Client Component is an
+// error, not a silent bundle of the service-role key. The `next/headers` import
+// below happens to enforce this too, but only as a side effect of import order
+// and tree-shaking — this states it outright.
+import 'server-only';
+
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
