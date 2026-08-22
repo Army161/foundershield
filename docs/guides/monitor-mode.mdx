@@ -1,0 +1,44 @@
+---
+title: "Running monitor mode"
+description: "The week before you enforce anything."
+---
+
+Run FounderShield in front of a real domain with real traffic for a week before
+enforcing anything. Not a staging domain — staging traffic will not show you
+what you need to see.
+
+## The checklist
+
+- Two DNS records added, verification passes, project goes `active`
+- A week in `monitor`. Read the activity log daily
+- **If enforcement would have blocked anyone you recognise as a real visitor, do not move on**
+- Switch to `standard`. Check your own site in a private window, on mobile data, and with an ad blocker
+- Check analytics for a drop in traffic or conversions
+- Confirm search crawlers still reach you
+- Trip a rate limit deliberately and confirm you can get back in
+
+## What to watch, in priority order
+
+<Steps>
+<Step title="False positives">
+The only thing that really matters. Watch `bots` blocks with a low bot score,
+and any `tpm.missing` on document requests.
+</Step>
+<Step title="Search traffic">
+Verified crawlers are allowed by default. Confirm in Search Console that it is
+actually working, rather than assuming.
+</Step>
+<Step title="Setup drop-off">
+Anyone stuck at DNS verification for more than a day has hit something the
+instructions do not cover. That is a documentation bug, not a user error.
+</Step>
+<Step title="Whether anyone opens the evidence log">
+If nobody does, the legal tooling is not the product and the pricing is wrong.
+</Step>
+</Steps>
+
+## If real users get blocked
+
+Put the project back into `monitor` immediately, then diagnose. Do not defend
+the score. Add the user agent to the allowlist as a stopgap and treat the
+underlying rule as a bug.

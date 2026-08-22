@@ -1,0 +1,35 @@
+---
+title: "Enforcement modes"
+description: "monitor, standard, and strict."
+---
+
+| Mode | First page load | API / assets | Use when |
+|---|---|---|---|
+| `monitor` | served | served | First 24–48h on a live domain. Records what *would* happen. |
+| `standard` | served, carries the challenge | requires a verified browser | Default. Right for most sites. |
+| `strict` | interstitial until verified | requires a verified browser | Highest-value content. Visitors see a brief check. |
+
+## Why monitor mode is readable
+
+Every recorded event carries both the decision and whether it was actually
+enforced. In monitor mode the `action` column is what the policy *decided* and
+`enforced` is `false` — so a dry run tells you exactly what would have changed,
+rather than leaving you to guess.
+
+<Warning>
+Do not skip monitor mode. It is the only way to find false positives before
+they reach a real customer, and a false positive is the failure that will cost
+you the account.
+</Warning>
+
+## Clickwrap presentation
+
+Two options, and the trade-off is stated rather than buried:
+
+- **Interstitial** withholds the page until terms are accepted.
+- **Modal** overlays the page that has already been sent.
+
+Modal mode supports contract formation and nothing more — the content already
+left the server. It is deliberately incapable of relaxing a browser challenge or
+bot block: if either of those is also stopping the request, the page is still
+withheld.

@@ -1,0 +1,62 @@
+---
+title: "How it works"
+description: "The request lifecycle, layer by layer."
+---
+
+Every request follows the same path:
+
+```
+build context → resolve policy → internal routes → assess → act → log
+```
+
+Two invariants hold throughout.
+
+<CardGroup cols={2}>
+<Card title="It fails open" icon="shield-check">
+An unhandled error in the protection layer falls through to a plain
+pass-through proxy. A bug in FounderShield must not become an outage for your
+users.
+</Card>
+<Card title="Every decision is recorded" icon="clipboard-list">
+The evidence write happens before the response is returned — including in
+monitor mode, where nothing is enforced.
+</Card>
+</CardGroup>
+
+## The layers
+
+Each layer produces a reason. The reasons are resolved into a single decision:
+`allow`, `challenge`, or `block`.
+
+| Layer | What it does |
+|---|---|
+| Access lists | Explicit IP and user-agent allow/deny |
+| Automation score | Header analysis. No JavaScript required, so it works on the first request |
+| Rate limit | Sharded Durable Object counters |
+| Auth gate | Routes you declare as requiring a session, key, or network |
+| Clickwrap | Terms acceptance, versioned and recorded |
+| Browser check | Proof-of-work plus a rolling-key token |
+
+## Degradation, not failure
+
+Rate limiting degrades rather than fails: if the Durable Object is unreachable,
+counting falls back to per-isolate approximation instead of blocking or
+erroring. The same principle runs throughout — when FounderShield cannot do its
+job properly, it gets out of the way rather than refusing traffic.
+
+## Headers your origin receives
+
+| Header | Meaning |
+|---|---|
+| `X-Foundershield-Verified` | `0` or `1` |
+| `X-Foundershield-Project` | The project id |
+| `X-Forwarded-For` | Original client address |
+| `X-Forwarded-Host` | Original host |
+
+Proxy cookies (`__fs_*`) are stripped before forwarding.
+
+## Headers the visitor sees
+
+`x-foundershield` carries the outcome: `blocked`, `challenge`, `degraded`, or
+`error`. `degraded` means the protection layer errored and passed the request
+through — your site was still served.

@@ -1,0 +1,54 @@
+---
+title: "Connect a domain"
+description: "DNS records, verification, and what can go wrong."
+---
+
+## The two records
+
+| Type | Name | Value |
+|---|---|---|
+| TXT | `_foundershield.<your-domain>` | `fs-verify=<token from the dashboard>` |
+| CNAME | `<your-domain>` | your edge hostname |
+
+The TXT record proves control of the domain. The CNAME routes traffic. Nothing
+is enforced until traffic actually reaches the proxy.
+
+## What verification checks
+
+Both of these must pass before a project becomes `active`:
+
+1. **Ownership** — the TXT record is read over DNS-over-HTTPS and compared to
+   the project's token.
+2. **Reachability** — `https://<domain>/__fs/v1/health` is fetched, and the
+   response must identify *this* project.
+
+<Warning>
+The second check is not a formality. It is what prevents a domain from being
+marked live while its traffic still bypasses the proxy entirely.
+</Warning>
+
+## Common failures
+
+<AccordionGroup>
+<Accordion title="Nothing was returned yet">
+DNS propagation. Wait a few minutes and retry. The dashboard reports what it
+found instead, which usually makes a typo obvious.
+</Accordion>
+
+<Accordion title="Reaches a proxy, but a different project">
+Two projects claim the same hostname, or a stale CNAME points somewhere else.
+Check for a duplicate DNS record.
+</Accordion>
+
+<Accordion title="Ownership confirmed, traffic not arriving">
+The TXT record resolved but the CNAME has not taken effect. Confirm the CNAME
+target matches the edge hostname shown in the dashboard exactly.
+</Accordion>
+</AccordionGroup>
+
+## You cannot verify yourself
+
+Domain status, DNS verification and the project secret are all server-side
+writes. The dashboard has no path that lets an account assert any of them about
+itself. This is deliberate: a customer who can mark their own domain verified
+can also fabricate the circumstances of everything recorded under it.

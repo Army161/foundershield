@@ -1,0 +1,47 @@
+---
+title: "Browser verification"
+description: "Proof-of-work and rolling-key tokens."
+---
+
+## The flow
+
+<Steps>
+<Step title="Injection">
+The proxy injects `<script src="/__fs/v1/c.js">` into your HTML. It is
+same-origin, so it survives a `script-src 'self'` policy without needing a
+nonce.
+</Step>
+<Step title="Challenge">
+The script fetches a signed challenge and solves a SHA-256 proof-of-work —
+roughly 50ms at the default difficulty, chunked so it never blocks paint.
+</Step>
+<Step title="Token">
+On success the edge sets a short-lived `HttpOnly` cookie
+(`Secure` over HTTPS, `SameSite=Lax`).
+</Step>
+<Step title="Verification">
+Every later request is verified at the edge, with no origin round-trip.
+</Step>
+</Steps>
+
+## Why rolling keys
+
+Signing keys are re-derived from the project secret on a fixed interval. A
+captured token therefore stops working after two rotations — without either side
+storing session state.
+
+## Expired is not the same as forged
+
+The two are recorded separately, because they are materially different facts:
+
+- A token that merely **expired** is re-challenged.
+- A token whose signature does **not verify** is blocked and logged distinctly.
+
+The second is evidence of an attempt to forge a credential. The first is a
+visitor who left a tab open.
+
+## Cost asymmetry
+
+A person pays the proof-of-work once. A scraper pays it on every request. That
+asymmetry is the point — it does not make scraping impossible, it makes it
+expensive and, more importantly, legible in the record.

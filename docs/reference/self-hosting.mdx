@@ -1,0 +1,62 @@
+---
+title: "Self-hosting"
+description: "Running FounderShield yourself."
+---
+
+FounderShield is three deployable pieces.
+
+## Database
+
+Apply `supabase/migrations/0001_init.sql` to a Supabase project:
+
+```bash
+npx supabase link --project-ref YOUR_PROJECT_REF
+```
+
+```bash
+npx supabase db push
+```
+
+## Edge worker
+
+```bash
+npx wrangler kv namespace create FS_CONFIG
+```
+
+```bash
+npx wrangler deploy
+```
+
+Required secrets, set with `wrangler secret put`:
+
+| Secret | Purpose |
+|---|---|
+| `SUPABASE_URL` | Project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Policy lookup and evidence writes |
+| `FS_ADMIN_KEY` | Shared secret for cache purges |
+
+Customer domains attach either as routes in `wrangler.toml`, or — the scalable
+option — via Cloudflare for SaaS custom hostnames.
+
+## Dashboard
+
+Deploys to Vercel unmodified. `FS_ADMIN_KEY` must match the Worker's.
+
+<Note>
+The proxy runs with no Supabase at all: set `FS_CONFIG_FALLBACK` to a JSON array
+of project configs for local development and demos.
+</Note>
+
+## Running the tests
+
+```bash
+npm test
+```
+
+```bash
+npm run test:schema
+```
+
+The database suites run against a real local Supabase — same Postgres version,
+same auth schema, same roles. Every check is a behaviour test: "can user B read
+user A's evidence", not "did the DDL parse".

@@ -1,0 +1,54 @@
+---
+title: "Legal tooling"
+description: "Generated terms, NDAs, and draft notices."
+---
+
+<Warning>
+Everything here is a template. None of it is legal advice, and FounderShield
+never sends anything on your behalf.
+</Warning>
+
+## Generated terms of use
+
+Clauses describing the access controls your site actually enforces, served at
+`/__fs/v1/terms`.
+
+The version **is** a hash of the rendered text. Editing any clause necessarily
+bumps the version and re-asks everyone who accepted the old wording. You cannot
+quietly alter terms someone already agreed to — which is the usual way clickwrap
+gets thrown out.
+
+A matching machine-readable policy is published at
+`/.well-known/ai-permissions.json`, because the terms assert it exists.
+
+## NDAs
+
+Trade-secret protection is conditional on having taken reasonable measures to
+keep information secret. An NDA with everyone who sees it is the canonical one.
+
+The detail worth knowing: US law requires these agreements to carry a
+whistleblower-immunity notice, and omitting it forfeits exemplary damages and
+attorney's fees against that person. Most templates omit it. This one includes
+it, defaults it on for US governing law, and flags it if you turn it off.
+
+Signing records assent — who, when, from where, and a hash of the exact text. A
+signed agreement is frozen at the database level: editing it raises an error,
+because a signature against a document that no longer exists is worse than no
+signature.
+
+<Note>
+This records assent. It is not a qualified electronic signature service.
+</Note>
+
+## Draft notices
+
+Two different documents, because the underlying facts differ:
+
+- **DMCA takedown** — built from republication facts, and refused unless every
+  statutory element is present. Software cannot hold a good-faith belief, so the
+  sworn statements start unticked and there is no way to default them on.
+- **Circumvention / access demand** — built from the evidence log. Each draft
+  reads its own evidence and says so when it is weak.
+
+Nothing is ever sent. There is a button to record that *you* sent something.
+There is no send button, and there will not be one.

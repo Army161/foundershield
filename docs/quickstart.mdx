@@ -1,0 +1,51 @@
+---
+title: "Quickstart"
+description: "From signup to a protected domain, in monitor mode."
+---
+
+<Steps>
+<Step title="Create a project">
+Sign in, then add the domain you want to protect and the origin it should
+forward to. The origin must be a different hostname from the protected domain,
+or the proxy would forward to itself.
+</Step>
+
+<Step title="Add two DNS records">
+The dashboard shows both. A `TXT` record proves you control the domain; a
+`CNAME` routes traffic through the proxy.
+
+| Type | Name | Value |
+|---|---|---|
+| TXT | `_foundershield.example.com` | `fs-verify=<your token>` |
+| CNAME | `example.com` | your edge hostname |
+</Step>
+
+<Step title="Verify">
+Verification checks the TXT record over DNS-over-HTTPS **and** fetches
+`https://<domain>/__fs/v1/health` to confirm traffic actually reaches the proxy
+and is serving the right project. Both must pass.
+
+<Warning>
+A domain only becomes active when both checks pass. You cannot mark your own
+domain verified — that flip is a server-side write, deliberately outside your
+account's reach.
+</Warning>
+</Step>
+
+<Step title="Stay in monitor mode for a week">
+`monitor` records exactly what enforcement *would* have done and blocks nothing.
+Read the activity log daily. If anything you recognise as a real visitor would
+have been blocked, do not move on.
+</Step>
+
+<Step title="Switch to standard">
+Once the log is clean, move to `standard`. Check your own site in a private
+window, on mobile data, and with an ad blocker enabled.
+</Step>
+</Steps>
+
+## What to watch first
+
+False positives, by a distance. A blocked customer is worse than a hundred
+admitted scrapers, because you will hear about it from a support ticket rather
+than a dashboard.

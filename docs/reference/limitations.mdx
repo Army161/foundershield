@@ -1,0 +1,48 @@
+---
+title: "Limitations"
+description: "What FounderShield does not do. Read this before relying on it."
+---
+
+These are disclosed up front rather than discovered later.
+
+## Technical
+
+| Limitation | Detail |
+|---|---|
+| Search crawler verification is inherited | Cloudflare's verified-bot signal is trusted rather than an independent reverse-DNS check being performed |
+| Evidence seals are self-generated | They prove internal consistency, not that the data was true when written. No external timestamping yet |
+| Request counts are estimates | Ordinary traffic is sampled |
+| Retention is not auto-enforced | Per-plan retention windows are not yet enforced automatically |
+
+## Legal
+
+FounderShield draws a deliberate line between four different things, and does
+not let them blur:
+
+<CardGroup cols={2}>
+<Card title="Technical observation" icon="eye">
+A request arrived with these characteristics.
+</Card>
+<Card title="Evidence" icon="folder">
+A tamper-evident record that the observation was made.
+</Card>
+<Card title="Interpretation" icon="magnifying-glass">
+What the pattern of observations suggests.
+</Card>
+<Card title="Legal conclusion" icon="scale-balanced">
+Not ours to draw. Take it to a lawyer.
+</Card>
+</CardGroup>
+
+Specifically, FounderShield does **not** claim that:
+
+- Scraping protected content is automatically illegal
+- Bypassing it automatically constitutes a federal crime
+- Evidence is immutable — it is tamper-**evident**, which is a different claim
+- Any litigation will succeed
+- Generated notices are legal advice
+- Signing provides a qualified electronic signature
+
+Anti-circumvention law as applied to bot mitigation is genuinely contested, and
+scraping a page you published openly is often not unauthorised access at all.
+What FounderShield provides is the record you would otherwise not have.

@@ -1,0 +1,49 @@
+---
+title: "Introduction"
+description: "Anti-scraping protection and evidence capture for solo founders."
+---
+
+FounderShield is a reverse proxy that sits in front of your site. It verifies
+that visitors are real browsers, closes the routes that should be closed, and
+keeps a tamper-evident record of everything it refused.
+
+The blocking is the part everyone expects. The record is the part that matters.
+
+## Why the record is the product
+
+The hard part of acting on a scraping incident is not stopping it — it is
+proving what happened. By the time you know you need evidence, the requests are
+already gone. FounderShield collects that evidence continuously, in a form your
+own account cannot alter, so it exists before you need it.
+
+<Note>
+FounderShield produces a record. It does not produce a legal conclusion. Take
+the export to a lawyer — do not take a dashboard for one.
+</Note>
+
+## What it is not
+
+- Not a guarantee that scraping stops. Determined scrapers with real browsers
+  get through; what changes is that you have a record of them.
+- Not a claim that bypassing it is a crime. That depends on your content, your
+  jurisdiction, and facts a proxy cannot see.
+- Not a law firm. The generated terms, NDAs and notices are templates.
+
+## Architecture
+
+```
+visitor ──▶ Cloudflare Worker ──▶ your origin
+               │
+               ├─ access lists      IP / user-agent allow and block
+               ├─ automation score  header analysis, no JS required
+               ├─ rate limit        sharded Durable Object counters
+               ├─ auth gate         protected routes
+               ├─ terms acceptance  clickwrap, versioned and signed
+               └─ browser check     proof-of-work + rolling-key token
+                        │
+                        └─▶ evidence log ──▶ Supabase (append-only)
+```
+
+Three pieces: a Cloudflare Worker at the edge, a Supabase database holding
+projects and evidence, and a Next.js dashboard. Customers install nothing —
+they point two DNS records at the proxy.

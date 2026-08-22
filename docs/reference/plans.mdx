@@ -1,0 +1,47 @@
+---
+title: "Plans"
+description: "What each tier includes, and what is never paywalled."
+---
+
+## On every plan, including free
+
+- Browser verification (proof-of-work + rolling-key tokens)
+- Automation scoring on every request
+- Rate limiting
+- Monitor and standard enforcement modes
+- Evidence log of blocked and challenged requests
+
+Nothing that keeps a live site standing up is behind a paywall. A free user
+being scraped is still protected.
+
+## The tiers
+
+| Plan | Price | Domains | Requests/mo | Retention |
+|---|---|---|---|---|
+| Free | $0 | 1 | 25,000 | 7 days |
+| Solo | $20 | 1 | 250,000 | 30 days |
+| Indie | $50 | 3 | 1,000,000 | 90 days |
+| Studio | $150 | 10 | 5,000,000 | 1 year |
+| Agency | $300 | 25 | 25,000,000 | 3 years |
+
+Paid tiers add strict mode, protected routes, generated terms and the terms
+acceptance gate. Indie adds evidence seals and reports. Studio adds agreements
+and notice drafting. Agency adds priority support.
+
+## Billing never gates traffic
+
+FounderShield sits in front of your users. Enforcing a request quota would mean
+degrading your site to collect our revenue — the same trade the proxy already
+refuses when it fails open.
+
+Request volume is **metered and reported, never enforced at the edge**. Going
+over produces a conversation, not a throttle. Domain count and feature access
+are enforced in the dashboard, where refusing is safe.
+
+<Note>
+Request counts are estimates. Ordinary traffic is sampled, which is precisely
+why allowances are advisory and nothing is ever throttled.
+</Note>
+
+A failed card keeps its plan rather than silently stripping your protection
+settings.

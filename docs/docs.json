@@ -1,0 +1,53 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "FounderShield",
+  "description": "Anti-scraping protection and evidence capture for solo founders.",
+  "colors": { "primary": "#0F172A", "light": "#38BDF8", "dark": "#0F172A" },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Concepts",
+            "pages": [
+              "concepts/how-it-works",
+              "concepts/enforcement-modes",
+              "concepts/browser-verification",
+              "concepts/evidence"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/connect-a-domain",
+              "guides/monitor-mode",
+              "guides/legal-tooling"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/reserved-paths",
+              "reference/plans",
+              "reference/self-hosting",
+              "reference/limitations"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [{ "label": "GitHub", "href": "https://github.com/Army161/foundershield" }]
+  },
+  "footer": {
+    "socials": { "github": "https://github.com/Army161/foundershield" }
+  }
+}

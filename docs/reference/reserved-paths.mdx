@@ -1,0 +1,32 @@
+---
+title: "Reserved paths"
+description: "Everything under /__fs/v1/ is handled by the proxy."
+---
+
+Everything under `/__fs/v1/` is handled by the proxy and never forwarded, so it
+cannot be shadowed or impersonated by an origin app.
+
+| Path | Purpose |
+|---|---|
+| `GET /__fs/v1/health` | Status. Used by DNS verification. |
+| `GET /__fs/v1/c.js` | Challenge client. |
+| `GET /__fs/v1/challenge` | Issues a signed challenge. |
+| `POST /__fs/v1/verify` | Accepts a solution, sets the token cookie. |
+| `POST /__fs/v1/clickwrap` | Records terms acceptance. |
+| `GET /__fs/v1/terms` | Generated terms of use. `.txt` for plain text. |
+| `POST /__fs/v1/admin/purge` | Drops a cached policy. Requires `X-FS-Admin-Key`. |
+
+## Customer-namespace documents
+
+Served from your own paths, and only when generated terms are configured:
+
+| Path | Purpose |
+|---|---|
+| `/.well-known/ai-permissions.json` | Machine-readable AI/TDM policy. Always served — the terms assert it exists. |
+| `/robots.txt` | Matching crawler policy. **Opt-in**, since that path usually already exists. |
+
+## Admin endpoint
+
+`POST /__fs/v1/admin/purge` requires the `X-FS-Admin-Key` header. The comparison
+is constant-time, and it fails closed: if no admin key is configured on the
+Worker, every request is rejected rather than accepted.

@@ -1,0 +1,55 @@
+---
+title: "Evidence"
+description: "Append-only records, hashing, and seals."
+---
+
+Evidence is the part of FounderShield worth paying for. Everything else is
+commodity bot mitigation.
+
+## How records are protected
+
+<AccordionGroup>
+<Accordion title="Hashed on write">
+A database trigger hashes every row on insert. The hash covers the observation
+columns — address, time, what was requested, which layer stopped it.
+</Accordion>
+
+<Accordion title="Sealed in ranges">
+A seal covers a contiguous range of events and chains to its predecessor. Seals
+cannot be created twice over the same range with no new events in between.
+</Accordion>
+
+<Accordion title="Verified by recomputation">
+Verification recomputes each row's hash from its *current* contents rather than
+trusting the stored value. An attacker who edits a row and recomputes its stored
+hash still breaks the chained digest — and verification reports which rows were
+altered.
+</Accordion>
+
+<Accordion title="Beyond your own reach">
+Your account has no permission to update or delete evidence. That restriction is
+what makes the record worth anything: a log its beneficiary can edit proves
+nothing.
+</Accordion>
+</AccordionGroup>
+
+## What the dashboard distinguishes
+
+| State | Meaning |
+|---|---|
+| Allowed | Served normally |
+| Challenged | Asked to prove it was a browser |
+| Blocked | Refused |
+| Enforced | Whether the decision was actually acted on, or merely recorded |
+
+## Burden analysis
+
+Per-request cost is recorded, then aggregated per actor: requests, bytes, origin
+time consumed, active span, and peak per-minute rate. These are the only numbers
+a trespass-to-chattels argument can rest on — and if they turn out unremarkable,
+it is better to know that before relying on the claim.
+
+<Note>
+Seals prove internal consistency. They do not prove the data was true when
+written, and there is no external timestamping yet. See [Limitations](/reference/limitations).
+</Note>
