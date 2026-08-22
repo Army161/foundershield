@@ -60,14 +60,17 @@ export default function LandingPage() {
 
       <main>
         <section className="mx-auto max-w-3xl px-6 pb-16 pt-20 text-center">
-          <h1 className="text-4xl font-semibold leading-[1.1] tracking-[-0.02em] sm:text-5xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
+            Not just blocking. Proof.
+          </p>
+          <h1 className="mt-3 text-4xl font-semibold leading-[1.1] tracking-[-0.02em] sm:text-5xl">
             Stop the scraping.
             <br />
             Keep the receipts.
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-ink-soft">
-            A reverse proxy that verifies real browsers before serving your content, closes the routes that should be
-            closed, and keeps a tamper-evident record of everything it refused.
+            A reverse proxy that verifies real browsers, closes the routes that should be closed, and keeps a
+            tamper-evident record of everything it refused &mdash; built before an incident, not assembled after one.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link href="/login" className="btn px-5 py-2.5">
@@ -77,7 +80,9 @@ export default function LandingPage() {
               See how it works
             </a>
           </div>
-          <p className="mt-4 text-sm text-ink-faint">Free plan, one domain, no card.</p>
+          <p className="mt-4 text-sm text-ink-faint">
+            Free plan, one domain, no card. Live in minutes &mdash; two DNS records, nothing to install.
+          </p>
         </section>
 
         <section className="border-y border-line bg-white">
@@ -130,12 +135,13 @@ export default function LandingPage() {
             </div>
 
             <div>
-              <h3 className="font-semibold">Writes down what happened</h3>
+              <h3 className="font-semibold">Writes down what happened &mdash; this is the part that matters</h3>
               <p className="mt-1.5 text-sm text-ink-soft">
-                Every refusal is recorded as it happens — the address, the time, what was asked for, and which control
-                stopped it, in plain English. Records are append-only, hashed on write, and can be sealed so a later
-                edit is detectable. Your own account has no permission to change them, which is exactly what makes them
-                worth having.
+                Anyone can block a bot. Almost nobody can hand you a record of the attempt afterward. Every refusal is
+                recorded as it happens — the address, the time, what was asked for, and which control stopped it, in
+                plain English. Records are append-only, hashed on write, and can be sealed so a later edit is
+                detectable. Your own account has no permission to change them, which is exactly what makes them worth
+                having.
               </p>
             </div>
 
