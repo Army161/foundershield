@@ -23,17 +23,29 @@ export function LoginForm() {
     const supabase = createSupabaseBrowserClient();
 
     if (mode === 'signup') {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
       setPending(false);
-      setMessage(
-        error
-          ? { kind: 'error', text: error.message }
-          : { kind: 'info', text: 'Check your email for a confirmation link.' },
-      );
+
+      if (error) {
+        setMessage({ kind: 'error', text: error.message });
+        return;
+      }
+
+      // A project with email confirmations disabled (the local-dev default, and
+      // a valid production choice) returns an active session immediately. In
+      // that case there is no confirmation email coming — telling the user to
+      // go check for one strands them on this screen with no way forward.
+      if (data.session) {
+        router.push('/dashboard');
+        router.refresh();
+        return;
+      }
+
+      setMessage({ kind: 'info', text: 'Check your email for a confirmation link.' });
       return;
     }
 
