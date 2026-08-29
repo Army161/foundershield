@@ -387,6 +387,13 @@ the exit criteria.
 
 ## Not yet built
 
+- **Plan feature enforcement.** `planAllows()` and `lowestPlanWith()` in
+  `packages/shared/src/plans.ts` are correct and unit-tested, but nothing in
+  the dashboard calls them. The only plan limit actually enforced today is
+  domain count (`canAddDomain`). Every paid-tier feature — strict mode,
+  protected routes, generated terms, evidence seals, evidence reports,
+  agreements, notices — is usable on the free plan. See
+  [`DEPLOYMENT-STATUS.md`](DEPLOYMENT-STATUS.md) for how this was found.
 - Independent reverse-DNS verification of search crawlers (currently trusts
   Cloudflare's `verifiedBotCategory`)
 - External timestamping of evidence seals

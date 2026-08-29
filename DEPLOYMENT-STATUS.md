@@ -182,6 +182,73 @@ suite was re-run from scratch and passes.
 
 ---
 
+## Live-user walkthrough (local Supabase, active-user testing)
+
+Performed after Stripe was connected and the docs/copy work landed, following
+the exact signup-to-monitoring path `docs/BETA.md` describes for a first real
+user. Run against a freshly reset local Supabase (`supabase db reset`), not
+production. Two findings, of very different severity.
+
+### Fixed: signup stranded auto-confirmed users
+
+`components/login-form.tsx` called `supabase.auth.signUp()` and, on any
+non-error response, unconditionally showed *"Check your email for a
+confirmation link."* When a Supabase project has `enable_confirmations = false`
+(the local-dev default, and a legitimate production choice), signup returns an
+**active session immediately** — no email is ever sent. The user was told to
+wait for something that would never arrive, with no path off the screen except
+guessing to click "Already have an account? Sign in" and re-entering their own
+credentials.
+
+Confirmed via the admin API before fixing: `email_confirmed_at` equalled
+`created_at` on the created account, and the local mail catcher (Mailpit) held
+zero messages, ruling out a delivery bug.
+
+**Fix:** the signup branch now checks `data.session` from the response. If a
+session came back, it redirects straight to `/dashboard`, exactly like a normal
+sign-in. The "check your email" message is now shown only when Supabase
+actually withheld a session pending confirmation. Verified: typecheck clean,
+then re-tested live end to end with a fresh account (`jordan+retest@…`) — signup
+now lands directly on the dashboard.
+
+### Open: plan features are not enforced anywhere
+
+The single most significant finding. `planAllows(planId, feature)` and
+`lowestPlanWith(feature)` exist in `packages/shared/src/plans.ts`, are correctly
+implemented, and are unit-tested (`plans.test.ts`, `describe('feature
+gating', …)`). **Neither function is imported anywhere in `packages/dashboard`.**
+The only plan limit actually enforced in the app is `canAddDomain` (domain
+count).
+
+Verified directly, not inferred: created a fresh free-tier account, and with no
+plan upgrade, successfully used four Indie/Studio-only features their own
+Billing page lists as requiring $50–$150/mo:
+
+| Feature | Minimum plan per `plans.ts` | Accessible on Free? |
+|---|---|---|
+| Evidence seals (`Seal events up to now`) | Indie ($50) | Yes |
+| Evidence report (`Open report`) | Indie ($50) | Yes |
+| Agreements (NDA generation) | Studio ($150) | Yes |
+| Notice drafting | Studio ($150) | Yes |
+
+The Billing page itself is fully honest and correctly shows "Billing is not
+configured" for every paid tier while listing exactly which features each one
+unlocks — which makes the gap worse, not better: an account is told a feature
+costs money and can use it in the same session, one click away.
+
+This is unrelated to Stripe being connected or not. Even with live prices and
+working checkout, upgrading a plan would change what the Billing page *says*,
+not what the product actually allows — nothing gates access today.
+
+**Not fixed.** This touches the settings form (strict-mode, auth-gate, terms,
+clickwrap toggles), the evidence seal action, the report route, and every
+agreements/notices action — a cross-cutting change to the action layer plus a
+UX decision (hide vs. disable-with-upsell vs. block-on-submit) that's worth
+confirming before touching ~8 call sites. Flagged here rather than silently
+fixed or silently dropped.
+
+---
+
 ## Credential blockers — action required
 
 All three deployment CLIs are confirmed unauthenticated. Each needs an
@@ -228,13 +295,24 @@ Branch: `main`
 | Security review | **PASS (static)** / BLOCKED (live) | Step 2 secret scan plus 9 code-level checks pass; CORS/CSP-in-the-wild, TLS and live rate limiting need deployed infra |
 | Legal claims (Step 11) | **PASS** | no prohibited claims; disclaimers present in copy and generators |
 | Real-domain beta | **BLOCKED** | no domain connected |
+| Signup flow | **PASS (fixed)** | auto-confirm dead-end found and fixed; verified live with a fresh account |
+| Plan / paywall enforcement | **FAIL — open** | `planAllows`/`lowestPlanWith` exist and are tested but are never called from the dashboard; every paid feature is usable on the free plan today |
 
 ### FINAL VERDICT: DEPLOYMENT BLOCKED
 
-Blocked solely on external credentials, not on defects. The codebase itself is
-in good shape: every suite passes, the production build and worker bundle are
-clean, the production dependency path has zero advisories, and no secret is
-exposed in the repository or its history.
+Blocked on external credentials **and** on one confirmed defect, not on
+credentials alone as earlier revisions of this document said. Cloudflare,
+Supabase and Vercel authorization are still required before any component can
+be deployed. Independently of that, the live-user walkthrough found that plan
+features are not enforced anywhere in the dashboard — see
+[Live-user walkthrough](#live-user-walkthrough-local-supabase-active-user-testing)
+above. That gap does not block a technical deployment, but it does mean the
+product would launch with every paid feature free for anyone, which is a
+launch blocker in its own right if billing is meant to work on day one.
+
+Everything else remains in good shape: 376 checks pass, the production build
+and worker bundle are clean, the production dependency path has zero
+advisories, and no secret is exposed in the repository or its history.
 
 This verdict says nothing about whether FounderShield works in production —
 no component has been deployed, no real traffic has passed through it, and no
